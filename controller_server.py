@@ -15,7 +15,7 @@ class ControllerServer:
     def __init__(self):
         self.app = FastAPI(routes=[
             APIRoute('/submit_task',
-                     self.deal_data,
+                     self.deal_response,
                      response_class=JSONResponse,
                      methods=['POST']
 
@@ -80,7 +80,7 @@ class ControllerServer:
         data['scenario_data'] = scenario
         # TODO: post to distributor
 
-    async def deal_data(self, request: Request, backtask: BackgroundTasks):
+    async def deal_response(self, request: Request, backtask: BackgroundTasks):
         data = await request.json()
         backtask.add_task(self.service_transmit, data)
         return {'msg': 'data send success!'}
