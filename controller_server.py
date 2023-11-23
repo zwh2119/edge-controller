@@ -1,6 +1,7 @@
 import asyncio
 import copy
 
+import requests
 from fastapi import FastAPI, BackgroundTasks
 
 from fastapi.routing import APIRoute
@@ -23,6 +24,7 @@ class ControllerServer:
         ], log_level='trace', timeout=6000)
 
         self.local_address = ''
+        self.distribute_address = 'http://114.212.81.11:5713/distribute'
 
         self.app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True,
@@ -38,6 +40,9 @@ class ControllerServer:
         content = data['content_data']
         scenario = data['scenario_data']
 
+        print('tmp data type:', type(tmp_data))
+        print('tmp:', tmp_data)
+
         # record transmit time
         tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
         assert transmit_time != 0
@@ -45,31 +50,36 @@ class ControllerServer:
 
         while index < len(pipeline):
             cur_service = pipeline[index]
-            if cur_service['execute_address'] != self.local_address:
-                tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
-                assert transmit_time == 0
-
-                data['pipeline_flow'] = pipeline
-                data['tmp_data'] = tmp_data
-                data['cur_flow_index'] = index
-                data['content_data'] = content
-                data['scenario_data'] = scenario
-
-                # TODO: post to other controllers
-
-                return
+            # if cur_service['execute_address'] != self.local_address:
+            #     tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
+            #     assert transmit_time == 0
+            #
+            #     data['pipeline_flow'] = pipeline
+            #     data['tmp_data'] = tmp_data
+            #     data['cur_flow_index'] = index
+            #     data['content_data'] = content
+            #     data['scenario_data'] = scenario
+            #
+            #     # TODO: post to other controllers
+            #
+            #     return
 
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
             assert service_time == 0
 
             # TODO: post to service
-            service_return = {}
+            # service_response = requests.post(cur_service['execute_address'], json={'input': content})
+            service_response = requests.post('http://127.0.0.1:9001/predict', json={'input': content})
+
+            service_return = service_response.json()
 
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
             assert service_time != 0
             pipeline[index]['execute_data']['service_time'] = service_time
+
             scenario.update(service_return['parameters'])
             content = copy.deepcopy(service_return['result'])
+            time.sleep(1)
 
             index += 1
 
@@ -79,6 +89,7 @@ class ControllerServer:
         data['content_data'] = content
         data['scenario_data'] = scenario
         # TODO: post to distributor
+        requests.post(self.distribute_address, json=data)
 
     async def deal_response(self, request: Request, backtask: BackgroundTasks):
         data = await request.json()
