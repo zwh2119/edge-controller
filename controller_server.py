@@ -16,6 +16,7 @@ from utils import *
 
 local_port = 9002
 
+service_ports_dict = {'car_detection': 9001}
 
 class ControllerServer:
     def __init__(self):
@@ -84,8 +85,10 @@ class ControllerServer:
             assert service_time == 0
 
             # post to service
-            # TODO: address check
-            service_response = requests.post(cur_service['execute_address'],
+            service_name = pipeline[index]['service_name']
+            assert service_name in service_ports_dict
+            service_address = service_ports_dict[service_name]
+            service_response = requests.post(service_address,
                                              data={'data': json.dumps(content)},
                                              files={
                                                  'file': (f'tmp_{source_id}.mp4', open(tmp_path, 'wb'), 'video/mp4')
