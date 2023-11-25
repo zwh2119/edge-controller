@@ -6,10 +6,11 @@ def record_time(data: dict, time_sign: str):
     if time_sign in data:
         start_time = data[time_sign]
         end_time = time.time()
+        del data[time_sign]
         return data, end_time - start_time
     else:
         data[time_sign] = time.time()
-        return data, 0
+        return data, -1
 
 
 def get_merge_address(ip, protocal='http', port=None, path=None):

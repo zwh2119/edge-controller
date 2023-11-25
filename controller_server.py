@@ -19,6 +19,7 @@ local_port = 9002
 service_ports_dict = {'car_detection': 9001}
 distribute_address = 'http://114.212.81.11:5713/distribute'
 
+
 class ControllerServer:
     def __init__(self):
         self.app = FastAPI(routes=[
@@ -51,6 +52,8 @@ class ControllerServer:
         scenario = data['scenario_data']
         content = data['content_data']
 
+        print(f'controller get data from source {source_id}')
+
         # get file data(video)
         tmp_path = f'tmp_receive_source_{source_id}_task_{task_id}.mp4'
         with open(tmp_path, 'wb') as buffer:
@@ -59,17 +62,18 @@ class ControllerServer:
 
         # end record transmit time
         tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
-        assert transmit_time != 0
+        assert transmit_time != -1
         pipeline[index]['execute_data']['transmit_time'] = transmit_time
 
         # execute pipeline
-        while index < len(pipeline):
+        # TODO: merge service deal and distribute
+        while index < len(pipeline)-1:
             cur_service = pipeline[index]
 
             # transfer to another controller
             if cur_service['execute_address'] != self.local_address:
                 tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
-                assert transmit_time == 0
+                assert transmit_time == -1
 
                 data['pipeline_flow'] = pipeline
                 data['tmp_data'] = tmp_data
@@ -83,37 +87,46 @@ class ControllerServer:
 
             # start record service time
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
-            assert service_time == 0
+            assert service_time == -1
 
             # post to service
             service_name = pipeline[index]['service_name']
             assert service_name in service_ports_dict
-            service_address = service_ports_dict[service_name]
+            service_address = get_merge_address(get_host_ip(), port=service_ports_dict[service_name],
+                                                path='predict')
             service_response = requests.post(service_address,
                                              data={'data': json.dumps(content)},
                                              files={
-                                                 'file': (f'tmp_{source_id}.mp4', open(tmp_path, 'wb'), 'video/mp4')
+                                                 'file': (f'tmp_{source_id}.mp4', open(tmp_path, 'rb'), 'video/mp4')
                                              })
             service_return = service_response.json()
 
             # end record service time
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
-            assert service_time != 0
+            assert service_time != -1
             pipeline[index]['execute_data']['service_time'] = service_time
+            print(f'service_time:{service_time}s')
 
             # deal with service result
-            scenario.update(service_return['parameters'])
+            if 'parameters' in service_return:
+                scenario.update(service_return['parameters'])
             content = copy.deepcopy(service_return['result'])
 
             index += 1
 
-        # post to distributor
+        # start record transmit time
+        tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
+        assert transmit_time == -1
+
         data['pipeline_flow'] = pipeline
         data['tmp_data'] = tmp_data
         data['cur_flow_index'] = index
         data['content_data'] = content
         data['scenario_data'] = scenario
+
+        # post to distributor
         requests.post(self.distribute_address, json=data)
+        print(f'controller post data from source {source_id} to distributor')
 
         os.remove(tmp_path)
 
