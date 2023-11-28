@@ -17,7 +17,8 @@ from utils import *
 local_port = 9002
 
 service_ports_dict = {'car_detection': 9001}
-distribute_address = 'http://114.212.81.11:5713/distribute'
+distribute_ip = '114.212.81.11'
+distribute_port = 5713
 
 
 class ControllerServer:
@@ -32,7 +33,7 @@ class ControllerServer:
         ], log_level='trace', timeout=6000)
 
         self.local_address = get_merge_address(get_host_ip(), port=local_port, path='submit_task')
-        self.distribute_address = distribute_address
+        self.distribute_address = get_merge_address(distribute_ip, port=distribute_port, path='distribute')
 
         self.app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True,
