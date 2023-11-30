@@ -67,7 +67,6 @@ class ControllerServer:
         pipeline[index]['execute_data']['transmit_time'] = transmit_time
 
         # execute pipeline
-        # TODO: merge service deal and distribute
         while index < len(pipeline)-1:
             cur_service = pipeline[index]
 
