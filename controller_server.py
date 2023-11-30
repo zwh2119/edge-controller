@@ -28,7 +28,6 @@ class ControllerServer:
                      self.deal_response,
                      response_class=JSONResponse,
                      methods=['POST']
-
                      ),
         ], log_level='trace', timeout=6000)
 
