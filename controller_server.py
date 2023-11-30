@@ -82,8 +82,14 @@ class ControllerServer:
                 data['content_data'] = content
                 data['scenario_data'] = scenario
 
-                # TODO: post to other controllers
+                # post to other controllers
+                requests.post(cur_service['execute_address'], data={'data': json.dumps(data)},
+                              files={'file': (f'tmp_{source_id}.mp4',
+                                              open(tmp_path, 'rb'),
+                                              'video/mp4')})
 
+                print(f'controller post data from source {source_id} to other controller')
+                os.remove(tmp_path)
                 return
 
             # start record service time
