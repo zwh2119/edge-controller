@@ -6,4 +6,4 @@ RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 COPY . .
 
-CMD ["gunicorn", "controller_server:app", "-c", "./gunicorn.conf.py"]
+CMD ["gunicorn", "controller_server:app", "-c", "./gunicorn_arm.conf.py"]
