@@ -16,7 +16,10 @@ from utils import *
 
 local_port = 9002
 
-service_ports_dict = {'car_detection': 9001}
+# service_ports_dict = {'car_detection': 9001}
+service_ports_dict = {'face_detection': 9003,
+                      'pose_estimation': 9004}
+
 distribute_ip = '114.212.81.11'
 distribute_port = 5713
 
