@@ -92,6 +92,8 @@ class ControllerServer:
                 print(f'controller post data from source {source_id} to other controller')
                 os.remove(tmp_path)
                 return
+            else:
+                pipeline[index]['execute_data']['transmit_time'] = 0
 
             # start record service time
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
