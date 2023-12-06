@@ -14,11 +14,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from utils import *
 
-local_port = 9002
 
-# service_ports_dict = {'car_detection': 9001}
-service_ports_dict = {'face_detection': 9003,
-                      'pose_estimation': 9004}
+service_ports_dict = {'car_detection': 9001}
+# service_ports_dict = {'face_detection': 9003,
+#                       'pose_estimation': 9004}
 
 distribute_ip = '114.212.81.11'
 distribute_port = 5713
@@ -34,7 +33,8 @@ class ControllerServer:
                      ),
         ], log_level='trace', timeout=6000)
 
-        self.local_address = get_merge_address(get_host_ip(), port=local_port, path='submit_task')
+        self.local_ip = get_host_ip()
+
         self.distribute_address = get_merge_address(distribute_ip, port=distribute_port, path='distribute')
 
         self.app.add_middleware(
@@ -73,7 +73,10 @@ class ControllerServer:
             cur_service = pipeline[index]
 
             # transfer to another controller
-            if cur_service['execute_address'] != self.local_address:
+            task_des_ip = extract_ip_from_address(cur_service['execute_address'])
+            assert task_des_ip
+            if task_des_ip != self.local_ip:
+                print(f'task_des_ip:{task_des_ip} local_ip:{self.local_ip}  transmit!')
                 tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
                 assert transmit_time == -1
 

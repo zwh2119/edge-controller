@@ -1,3 +1,4 @@
+import re
 import socket
 import time
 
@@ -26,6 +27,12 @@ def get_merge_address(ip, protocal='http', port=None, path=None):
     path = '' if path is None else path
 
     return f'{protocal}://{ip}{port_divider}{port}{path_divider}{path}'
+
+
+def extract_ip_from_address(address):
+    ip_pattern = r"https?:\/\/([\d\.]+):\d+"
+    ip_match = re.search(ip_pattern, address)
+    return ip_match.group(1) if ip_match else None
 
 
 def get_host_ip():
