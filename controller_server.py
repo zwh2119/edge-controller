@@ -13,6 +13,7 @@ from starlette.requests import Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import *
+from log import LOGGER
 
 
 service_ports_dict = {'car_detection': 9001}
@@ -55,7 +56,7 @@ class ControllerServer:
         scenario = data['scenario_data']
         content = data['content_data']
 
-        print(f'controller get data from source {source_id}')
+        LOGGER.debug(f'controller get data from source {source_id}')
 
         # get file data(video)
         tmp_path = f'tmp_receive_source_{source_id}_task_{task_id}.mp4'
@@ -76,7 +77,7 @@ class ControllerServer:
             task_des_ip = extract_ip_from_address(cur_service['execute_address'])
             assert task_des_ip
             if task_des_ip != self.local_ip:
-                print(f'task_des_ip:{task_des_ip} local_ip:{self.local_ip}  transmit!')
+                LOGGER.debug(f'task_des_ip:{task_des_ip} local_ip:{self.local_ip}  transmit!')
                 tmp_data, transmit_time = record_time(tmp_data, f'transmit_time_{index}')
                 assert transmit_time == -1
 
@@ -92,7 +93,7 @@ class ControllerServer:
                                               open(tmp_path, 'rb'),
                                               'video/mp4')})
 
-                print(f'controller post data from source {source_id} to other controller')
+                LOGGER.debug(f'controller post data from source {source_id} to other controller')
                 os.remove(tmp_path)
                 return
             else:
@@ -118,7 +119,7 @@ class ControllerServer:
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
             assert service_time != -1
             pipeline[index]['execute_data']['service_time'] = service_time
-            print(f'service_time:{service_time}s')
+            LOGGER.debug(f'service_time of {source_id}:{service_time}s')
 
             # deal with service result
             if 'parameters' in service_return:
@@ -139,7 +140,7 @@ class ControllerServer:
 
         # post to distributor
         requests.post(self.distribute_address, json=data)
-        print(f'controller post data from source {source_id} to distributor')
+        LOGGER.debug(f'controller post data from source {source_id} to distributor')
 
         os.remove(tmp_path)
 
