@@ -4,17 +4,15 @@ import json
 import os
 import shutil
 
-import requests
 from fastapi import FastAPI, BackgroundTasks, UploadFile, File, Form
 
 from fastapi.routing import APIRoute
 from starlette.responses import JSONResponse
-from starlette.requests import Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils import *
 from log import LOGGER
-
+from client import http_request
 
 service_ports_dict = {'car_detection': 9001}
 # service_ports_dict = {'face_detection': 9003,
@@ -23,6 +21,7 @@ service_ports_dict = {'car_detection': 9001}
 distribute_ip = '114.212.81.11'
 distribute_port = 5713
 distribute_path = 'distribute'
+
 
 class ControllerServer:
     def __init__(self):
@@ -70,7 +69,7 @@ class ControllerServer:
         pipeline[index]['execute_data']['transmit_time'] = transmit_time
 
         # execute pipeline
-        while index < len(pipeline)-1:
+        while index < len(pipeline) - 1:
             cur_service = pipeline[index]
 
             # transfer to another controller
@@ -88,10 +87,12 @@ class ControllerServer:
                 data['scenario_data'] = scenario
 
                 # post to other controllers
-                requests.post(cur_service['execute_address'], data={'data': json.dumps(data)},
-                              files={'file': (f'tmp_{source_id}.mp4',
-                                              open(tmp_path, 'rb'),
-                                              'video/mp4')})
+                http_request(url=cur_service['execute_address'], method='POST',
+                             data={'data': json.dumps(data)},
+                             files={'file': (f'tmp_{source_id}.mp4',
+                                             open(tmp_path, 'rb'),
+                                             'video/mp4')}
+                             )
 
                 LOGGER.debug(f'controller post data from source {source_id} to other controller')
                 os.remove(tmp_path)
@@ -108,12 +109,10 @@ class ControllerServer:
             assert service_name in service_ports_dict
             service_address = get_merge_address(get_host_ip(), port=service_ports_dict[service_name],
                                                 path='predict')
-            service_response = requests.post(service_address,
-                                             data={'data': json.dumps(content)},
-                                             files={
-                                                 'file': (f'tmp_{source_id}.mp4', open(tmp_path, 'rb'), 'video/mp4')
-                                             })
-            service_return = service_response.json()
+            service_return = http_request(url=service_address, method='POST',
+                                          data={'data': json.dumps(content)},
+                                          files={'file': (f'tmp_{source_id}.mp4', open(tmp_path, 'rb'), 'video/mp4')}
+                                          )
 
             # end record service time
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
@@ -139,7 +138,7 @@ class ControllerServer:
         data['scenario_data'] = scenario
 
         # post to distributor
-        requests.post(self.distribute_address, json=data)
+        http_request(url=self.distribute_address, method='POST', json=data)
         LOGGER.debug(f'controller post data from source {source_id} to distributor')
 
         os.remove(tmp_path)
