@@ -114,6 +114,10 @@ class ControllerServer:
                                           files={'file': (f'tmp_{source_id}.mp4', open(tmp_path, 'rb'), 'video/mp4')}
                                           )
 
+            # TODO: record discard data package
+            if service_return is None:
+                return
+
             # end record service time
             tmp_data, service_time = record_time(tmp_data, f'service_time_{index}')
             assert service_time != -1
