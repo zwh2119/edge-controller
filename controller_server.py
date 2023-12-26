@@ -19,8 +19,7 @@ service_ports_dict = {'car_detection': 9001}
 #                       'pose_estimation': 9004}
 
 distribute_ip = '114.212.81.11'
-distribute_port = 5713
-distribute_path = 'distribute'
+distributor_port = 9500
 
 
 class ControllerServer:
@@ -35,7 +34,7 @@ class ControllerServer:
 
         self.local_ip = get_host_ip()
 
-        self.distribute_address = get_merge_address(distribute_ip, port=distribute_port, path=distribute_path)
+        self.distribute_address = get_merge_address(distribute_ip, port=distributor_port, path='distribute')
 
         self.app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True,
