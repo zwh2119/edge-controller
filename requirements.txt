@@ -3,3 +3,4 @@ starlette
 uvicorn
 gunicorn
 python-multipart
+colorlog
