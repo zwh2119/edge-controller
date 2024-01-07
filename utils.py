@@ -1,7 +1,5 @@
-import fcntl
 import re
 import socket
-import struct
 import time
 
 
@@ -37,32 +35,19 @@ def extract_ip_from_address(address):
     return ip_match.group(1) if ip_match else None
 
 
-# def get_host_ip():
-#     """
-#     get ip of current local host
-#     """
-#
-#     ip = '127.0.0.1'
-#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#     try:
-#         s.connect(("8.8.8.8", 80))
-#         ip = s.getsockname()[0]
-#     except Exception:
-#         pass
-#     finally:
-#         s.close()
-#
-#     return ip
-
 def get_host_ip():
     """
     get ip of current local host
-    in docker container
     """
+
+    ip = '127.0.0.1'
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    ip_address = socket.inet_ntoa(fcntl.ioctl(
-        s.fileno(),
-        0x8915,  # SIOCGIFADDR
-        struct.pack('256s', b'docker0'[:15])
-    )[20:24])
-    return ip_address
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        pass
+    finally:
+        s.close()
+
+    return ip
