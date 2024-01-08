@@ -1,4 +1,3 @@
-import asyncio
 import copy
 import json
 import os
@@ -13,15 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils import *
 from log import LOGGER
 from client import http_request
-
-service_ports_dict = {'car_detection': 9001}
-# service_ports_dict = {'face_detection': 9003,
-#                       'pose_estimation': 9004}
-
-distribute_ip = '114.212.81.11'
-
-
-distributor_port = 9500
+from config import Context
 
 
 class ControllerServer:
@@ -34,9 +25,14 @@ class ControllerServer:
                      ),
         ], log_level='trace', timeout=6000)
 
-        self.local_ip = get_host_ip()
+        node_info = get_nodes_info()
+        self.service_ports_dict = json.loads(Context.get_parameters('service_port'))
+        self.distributor_port = Context.get_parameters('distributor_port')
+        self.distributor_ip = node_info[Context.get_parameters('distributor_name')]
 
-        self.distribute_address = get_merge_address(distribute_ip, port=distributor_port, path='distribute')
+        self.local_ip = node_info[Context.get_parameters('NODE_NAME')]
+
+        self.distribute_address = get_merge_address(self.distributor_ip, port=self.distributor_port, path='distribute')
 
         self.app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True,
@@ -107,8 +103,8 @@ class ControllerServer:
 
             # post to service
             service_name = pipeline[index]['service_name']
-            assert service_name in service_ports_dict
-            service_address = get_merge_address(get_host_ip(), port=service_ports_dict[service_name],
+            assert service_name in self.service_ports_dict
+            service_address = get_merge_address(self.local_ip, port=self.service_ports_dict[service_name],
                                                 path='predict')
             service_return = http_request(url=service_address, method='POST',
                                           data={'data': json.dumps(content)},
